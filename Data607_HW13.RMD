@@ -1,0 +1,135 @@
+---
+title: "Data607 HW 13"
+author: "Ritesh Lohiya"
+date: "April 27, 2018"
+output: html_document
+---
+
+#Read the DB password for from the file
+```{r}
+password = read.table("C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/flights/pass.txt")
+```
+
+#install.packages('RMySQL',type='source')
+#install.packages('mongolite',type='source')
+```{r}
+library(RMySQL)
+library(DBI)
+library(ggplot2)
+library(mongolite)
+```
+
+#Connection to the MySQL:
+
+
+```{r}
+moviesdb = dbConnect(MySQL(), user='root', password=toString(password[1,1]), dbname='movies', host='localhost')
+```
+
+#List the fields in demo table:
+
+```{r}
+dbListFields(moviesdb, 'demo')
+```
+
+#List the fields in ratings table:
+
+```{r}
+dbListFields(moviesdb, 'ratings')
+```
+
+#Frequency of the ratings:
+
+```{r}
+freq_df<-dbGetQuery(moviesdb,'select movie_name, rating, count(rating) as count
+from ratings
+group by movie_name,rating
+order by movie_name, rating;')
+```
+
+#View the frequency distribution:
+
+```{r}
+freq_df
+```
+
+#Joining the 2 tables and prepare the dataframes:
+
+```{r}
+movies_df<-dbGetQuery(moviesdb, 'select 
+a.name, 
+a.name_id, 
+a.state, 
+a.age,
+b.movie_name,
+b.rating
+from demo a
+left join ratings b
+on a.name_id=b.name_id
+order by b.rating
+;')
+```
+
+#Contents of the dataframe
+
+```{r}
+head(movies_df)
+```
+
+#Writing from Dataframe to MongoDB:
+
+```{r}
+c=mongo(collection="movies_df", db="Movies")
+c$insert(movies_df)
+```
+
+#Checking for distinct movie name
+
+```{r}
+c$distinct("movie_name")
+```
+
+#Checking for distinct name
+
+```{r}
+c$distinct("name")
+```
+
+#Count the data in MongoDB
+
+```{r}
+c$count()
+```
+
+Likewise we can do aggregate, find, info etc....
+
+#Comparisons:
+
+Advantages of NoSql Databases:
+
+1. Highly and easily scalable
+2. No Schema or Fixed Data model
+3. Maintaining NoSQL Servers is Less Expensive
+4. Lesser Server Cost and open-Source
+5. Support Integrated Caching
+
+Disadvantages of NoSql Databases: 
+
+1. There are not many defined standards for NoSQL databases, so no two NoSQL databases are equal.
+2. No Stored Procedures in mongodb (NoSql database).
+
+Advantages of relational Databases:
+
+1. Provide facility primary key, to uniquely identify the rows.
+2. Each row contains a unique instance of data for the categories defined by the columns.
+3. Declarative syntax.
+
+
+Disadvantages of relational Databases:
+
+1. Scalability: Users have to scale relational database on powerful servers that are expensive and difficult to handle. 
+2. Handling tables across different servers is difficult .
+3. Complexity: If your data doesn't fit into tables, then you need to design your database structure that will be complex and again difficult to handle.
+
+
+
